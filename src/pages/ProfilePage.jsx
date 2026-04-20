@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   User as UserIcon, 
   Mail, 
@@ -9,20 +9,49 @@ import {
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import { updateUserProfile } from '../firebase/firestore';
+import { fileToBase64 } from '../utils/base64Converter';
 import { toast } from 'react-hot-toast';
 
 const ProfilePage = () => {
-  const { user, role } = useAuth();
-  const [displayName, setDisplayName] = useState(user?.displayName || user?.email?.split('@')[0]);
+  const { user, role, profile } = useAuth();
+  const [displayName, setDisplayName] = useState('');
+  const [photoBase64, setPhotoBase64] = useState('');
   const [updating, setUpdating] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Initialize from profile when loaded
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.name || user?.email?.split('@')[0]);
+      setPhotoBase64(profile.photoBase64 || '');
+    }
+  }, [profile, user]);
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const base64 = await fileToBase64(file, { maxWidth: 400, maxHeight: 400, quality: 0.6 });
+      setPhotoBase64(base64);
+      toast.success("Image selected! Don't forget to save profile.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error processing image");
+    }
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setUpdating(true);
     try {
-      await updateUserProfile(user.uid, { name: displayName });
-      toast.success("Profile updated! Changes will appear after sync.");
-    } catch {
+      await updateUserProfile(user.uid, { 
+        name: displayName,
+        photoBase64: photoBase64 
+      });
+      toast.success("Profile updated! Your new avatar is active.");
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to update profile");
     } finally {
       setUpdating(false);
@@ -46,10 +75,25 @@ const ProfilePage = () => {
         <div className="lg:col-span-1 space-y-8">
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 flex flex-col items-center text-center">
             <div className="relative group mb-6">
-              <div className="h-32 w-32 bg-slate-100 rounded-full flex items-center justify-center border-4 border-indigo-50 overflow-hidden">
-                <UserIcon className="h-16 w-16 text-slate-300" />
+              <div className="h-32 w-32 bg-slate-100 rounded-full flex items-center justify-center border-4 border-indigo-50 overflow-hidden shadow-inner">
+                {photoBase64 ? (
+                  <img src={photoBase64} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  <UserIcon className="h-16 w-16 text-slate-300" />
+                )}
               </div>
-              <button className="absolute bottom-0 right-0 p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-600/30 hover:scale-110 transition-all active:scale-95">
+              <input 
+                type="file" 
+                hidden 
+                ref={fileInputRef} 
+                accept="image/*" 
+                onChange={handleImageChange}
+              />
+              <button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-0 right-0 p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-600/30 hover:scale-110 transition-all active:scale-95 z-10"
+              >
                 <Camera className="h-5 w-5" />
               </button>
             </div>

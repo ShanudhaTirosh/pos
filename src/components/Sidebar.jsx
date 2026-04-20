@@ -75,8 +75,12 @@ const Sidebar = () => {
 
       <div className="p-4 border-t border-slate-800 space-y-4">
         <div className="flex items-center gap-3 px-4">
-          <div className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700">
-            <User className="h-6 w-6 text-slate-300" />
+          <div className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700 overflow-hidden">
+            {profile?.photoBase64 ? (
+              <img src={profile.photoBase64} alt="User Avatar" className="h-full w-full object-cover" />
+            ) : (
+              <User className="h-6 w-6 text-slate-300" />
+            )}
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="text-sm font-bold truncate">{profile?.name || user?.email?.split('@')[0]}</p>
