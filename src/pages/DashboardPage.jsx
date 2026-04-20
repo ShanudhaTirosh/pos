@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, 
   ShoppingBag, 
@@ -35,6 +36,7 @@ const StatCard = ({ title, value, icon, color, trend }) => (
 );
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [userCount, setUserCount] = useState(0);
@@ -198,7 +200,10 @@ const DashboardPage = () => {
                     <p className="font-bold text-slate-900 text-sm truncate">{p.name}</p>
                     <p className="text-xs text-red-500 font-bold uppercase tracking-tighter">Only {p.stock} left</p>
                   </div>
-                  <button className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-red-500 shadow-sm border border-red-100 group-hover:bg-red-600 group-hover:text-white transition-all">
+                  <button 
+                    onClick={() => navigate('/products')}
+                    className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-red-500 shadow-sm border border-red-100 group-hover:bg-red-600 group-hover:text-white transition-all"
+                  >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
