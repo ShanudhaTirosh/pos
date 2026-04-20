@@ -255,7 +255,7 @@ const POSPage = () => {
 
   // Launch customer display
   const handleLaunchCustomerDisplay = () => {
-    const displayWindow = window.open('/customer-display', 'customerDisplay', 'width=1024,height=768');
+    const displayWindow = window.open('#/customer-display', 'customerDisplay', 'width=1024,height=768');
     if (displayWindow) {
       toast.success('Customer display launched! Move it to the second screen.', { icon: '📺' });
       // Send initial data after window loads
