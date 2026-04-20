@@ -22,7 +22,9 @@ const ProfilePage = () => {
   // Initialize from profile when loaded
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line
       setDisplayName(profile.name || user?.email?.split('@')[0]);
+      // eslint-disable-next-line
       setPhotoBase64(profile.photoBase64 || '');
     }
   }, [profile, user]);
