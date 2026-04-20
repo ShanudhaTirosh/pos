@@ -23,6 +23,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, subtotal, tax, taxRate, total, o
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [redeemPoints, setRedeemPoints] = useState(false);
   const [processing, setProcessing] = useState(false);
   const tenderedRef = useRef(null);
   // Reset state when modal opens
@@ -36,6 +37,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, subtotal, tax, taxRate, total, o
         setShowNewCustomer(false);
         setNewCustomerName('');
         setNewCustomerPhone('');
+        setRedeemPoints(false);
         setProcessing(false);
       }, 0);
       return () => clearTimeout(timer);
@@ -48,8 +50,11 @@ const CheckoutModal = ({ isOpen, onClose, cart, subtotal, tax, taxRate, total, o
     }
   }, [isOpen, paymentMethod]);
 
-  const change = paymentMethod === 'Cash' ? Math.max(0, parseFloat(amountTendered || 0) - total) : 0;
-  const canComplete = paymentMethod !== 'Cash' || parseFloat(amountTendered || 0) >= total;
+  const pointsToRedeem = (redeemPoints && customer?.loyaltyPoints) ? Math.min(customer.loyaltyPoints, total) : 0;
+  const finalTotal = total - pointsToRedeem;
+  
+  const change = paymentMethod === 'Cash' ? Math.max(0, parseFloat(amountTendered || 0) - finalTotal) : 0;
+  const canComplete = paymentMethod !== 'Cash' || parseFloat(amountTendered || 0) >= finalTotal;
 
   const handleSearchCustomer = async () => {
     if (!customerSearch.trim()) return;
@@ -98,9 +103,10 @@ const CheckoutModal = ({ isOpen, onClose, cart, subtotal, tax, taxRate, total, o
     try {
       await onConfirm({
         paymentMethod,
-        amountTendered: paymentMethod === 'Cash' ? parseFloat(amountTendered || 0) : total,
+        amountTendered: paymentMethod === 'Cash' ? parseFloat(amountTendered || 0) : finalTotal,
         change,
-        customer: customer ? { id: customer.id, name: customer.name, phone: customer.phone } : null
+        customer: customer ? { id: customer.id, name: customer.name, phone: customer.phone } : null,
+        pointsRedeemed: pointsToRedeem
       });
     } catch {
       setProcessing(false);
@@ -136,7 +142,10 @@ const CheckoutModal = ({ isOpen, onClose, cart, subtotal, tax, taxRate, total, o
           {/* Grand Total */}
           <div className="bg-slate-900 rounded-2xl p-6 text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Total Amount</p>
-            <p className="text-4xl font-black text-white">{formatCurrency(total)}</p>
+            <p className="text-4xl font-black text-white">{formatCurrency(finalTotal)}</p>
+            {pointsToRedeem > 0 && (
+               <p className="text-sm font-bold text-emerald-400 mt-2">Loyalty Reward Applied: -{formatCurrency(pointsToRedeem)}</p>
+            )}
             <div className="flex justify-center gap-4 mt-3 text-xs text-slate-400">
               <span>Subtotal: {formatCurrency(subtotal)}</span>
               <span>Tax ({(taxRate * 100).toFixed(1)}%): {formatCurrency(tax)}</span>
@@ -218,6 +227,20 @@ const CheckoutModal = ({ isOpen, onClose, cart, subtotal, tax, taxRate, total, o
                 <div className="flex-1">
                   <p className="font-bold text-slate-900">{customer.name}</p>
                   <p className="text-xs text-slate-500">{customer.phone}</p>
+                  {customer.loyaltyPoints > 0 && (
+                    <div className="mt-2 flex items-center gap-2">
+                       <input 
+                          type="checkbox" 
+                          id="redeemPoints" 
+                          checked={redeemPoints}
+                          onChange={(e) => setRedeemPoints(e.target.checked)}
+                          className="accent-indigo-600 w-4 h-4"
+                       />
+                       <label htmlFor="redeemPoints" className="text-xs font-bold text-indigo-700 cursor-pointer">
+                         Redeem Points ({customer.loyaltyPoints} avail, value: {formatCurrency(customer.loyaltyPoints)})
+                       </label>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => setCustomer(null)}
@@ -300,14 +323,14 @@ const CheckoutModal = ({ isOpen, onClose, cart, subtotal, tax, taxRate, total, o
             ) : (
               <>
                 <Check className="h-6 w-6" />
-                Complete Sale — {formatCurrency(total)}
+                Complete Sale — {formatCurrency(finalTotal)}
                 <ArrowRight className="h-5 w-5" />
               </>
             )}
           </button>
           {paymentMethod === 'Cash' && !canComplete && (
             <p className="text-center text-xs text-red-500 font-bold mt-2">
-              Amount tendered must be at least {formatCurrency(total)}
+              Amount tendered must be at least {formatCurrency(finalTotal)}
             </p>
           )}
         </div>

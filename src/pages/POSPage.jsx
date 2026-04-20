@@ -56,7 +56,7 @@ const POSPage = () => {
   const searchInputRef = useRef(null);
 
   const { user, profile } = useAuth();
-  const { cart, addToCart, removeFromCart, updateQuantity, clearCart, setCart, subtotal, tax, total, taxRate } = useCart();
+  const { cart, addToCart, removeFromCart, updateQuantity, clearCart, setCart, subtotal, tax, total, taxRate, discountAmount, discountType, setDiscountType, discountValue, setDiscountValue } = useCart();
 
   // Initialize broadcast channel
   useEffect(() => {
@@ -128,6 +128,7 @@ const POSPage = () => {
       const orderData = {
         items: cart,
         subtotal,
+        discountAmount, // added
         tax,
         total,
         cashierId: user.uid,
@@ -542,6 +543,36 @@ const POSPage = () => {
               <span>Subtotal</span>
               <span className="font-bold">{formatCurrency(subtotal)}</span>
             </div>
+            
+            {/* Discount Section */}
+            <div className="pt-2 pb-1">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Apply Discount</label>
+              <div className="flex gap-2">
+                <select 
+                  value={discountType}
+                  onChange={(e) => setDiscountType(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none text-xs font-bold text-slate-700"
+                >
+                  <option value="fixed">Fixed (Rs)</option>
+                  <option value="percentage">% Off</option>
+                </select>
+                <input 
+                  type="number"
+                  min="0"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(Number(e.target.value))}
+                  className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none text-xs font-bold text-slate-700"
+                  placeholder="0"
+                />
+              </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between items-center text-emerald-600 mt-2 text-xs">
+                  <span className="font-bold">Discount Applied</span>
+                  <span className="font-black">-{formatCurrency(discountAmount)}</span>
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-between items-center text-slate-600">
               <span>Tax ({(taxRate * 100).toFixed(1)}%)</span>
               <span className="font-bold">{formatCurrency(tax)}</span>
