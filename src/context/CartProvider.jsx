@@ -7,6 +7,8 @@ import { CartContext } from './CartContext';
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [taxRate, setTaxRate] = useState(0.08); // Default 8%
+  const [discountType, setDiscountType] = useState('fixed'); // 'fixed' | 'percentage'
+  const [discountValue, setDiscountValue] = useState(0);
   const { user } = useAuth();
 
   // Load global settings (tax rate) once user is logged in
@@ -90,11 +92,21 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = () => {
     setCart([]);
+    setDiscountValue(0);
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
+  
+  let discountAmount = 0;
+  if (discountType === 'fixed') {
+    discountAmount = Math.min(discountValue, subtotal); 
+  } else if (discountType === 'percentage') {
+    discountAmount = subtotal * (discountValue / 100);
+  }
+
+  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+  const tax = discountedSubtotal * taxRate;
+  const total = discountedSubtotal + tax;
 
   const value = {
     cart,
@@ -104,6 +116,11 @@ export const CartProvider = ({ children }) => {
     updateQuantity,
     clearCart,
     subtotal,
+    discountAmount,
+    discountType,
+    setDiscountType,
+    discountValue,
+    setDiscountValue,
     tax,
     total,
     taxRate
